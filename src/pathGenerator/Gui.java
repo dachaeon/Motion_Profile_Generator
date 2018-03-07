@@ -132,7 +132,7 @@ public class Gui {
 	private void initialize() {
 		frmMotionProfileGenerator = new JFrame();
 		frmMotionProfileGenerator.setResizable(false);
-		frmMotionProfileGenerator.setTitle("Motion Profile Generator");
+		frmMotionProfileGenerator.setTitle("5437 Motion Profile Generator");
 		frmMotionProfileGenerator.setLocation(150, 100);
 		frmMotionProfileGenerator.setSize(1075, 677);
 		frmMotionProfileGenerator.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -898,7 +898,32 @@ public class Gui {
     	btnAddPoint.setText("Add Point");
     }
     
+    private void writeJavaFile(PrintWriter pw, Trajectory trajectory, int trajectory_length, String filename) {
+    	int teamNumber = 5437; //TODO parameterize
+		pw.printf("package org.usfirst.frc.%d.robot;\n\n", teamNumber);
+		pw.printf("public class %sMotionProfile {\n", fileName);
+		pw.printf("\tpublic static final int kNumPoints = %d;\n", trajectory_length);
+		pw.println("\tpublic static double [][]Points = new double[][]{\n");
+		
+    	for (int i = 0; i < trajectory_length - 1; i++) 
+    	{			
+    		Segment seg = trajectory.get(i);
+    		pw.printf("\t\t{%f, %f, %d},\n", seg.position, seg.velocity, (int)(seg.dt * 1000));
+    	}
+    	
+    	//treat the last line differently
+    	Segment seg = trajectory.get(trajectory_length - 1);
+    	pw.printf("\t\t{%f, %f, %d}\n", seg.position, seg.velocity, (int)(seg.dt * 1000));
+    	pw.println("\t};\n}");
+    }
+    
     private void btnMenuSaveActionPerformed(java.awt.event.ActionEvent evt) throws IOException
+    { 
+    	System.out.println("Handled event: " + evt);
+    	doSave(); 
+    }
+    
+    private void doSave() throws IOException
     {
     	if(txtFileName.getText().equals("") == false)
     	{
@@ -908,8 +933,8 @@ public class Gui {
     			{
     				if(rdbtnTankDrive.isSelected())
     				{
-	    				lFile = new File(directory, fileName + "_left.csv");
-				        rFile = new File(directory, fileName + "_right.csv");
+	    				lFile = new File(directory, fileName + "_left.java");
+				        rFile = new File(directory, fileName + "_right.java");
 				        
 				        if( lFile.exists() || rFile.exists() )
 				        {
@@ -933,6 +958,7 @@ public class Gui {
 						PrintWriter lpw = new PrintWriter( lfw );
 						PrintWriter rpw = new PrintWriter( rfw );
 						
+						
 				    	// Detailed CSV with dt, x, y, position, velocity, acceleration, jerk, and heading
 				        File leftFile = new File(directory, fileName + "_left_detailed.csv");
 				        File rightFile = new File(directory, fileName + "_right_detailed.csv");
@@ -944,18 +970,9 @@ public class Gui {
 					        
 					        // CSV with position and velocity. To be used with Talon SRX Motion 
 					    	// save left path to CSV
-					    	for (int i = 0; i < left.length(); i++) 
-					    	{			
-					    		Segment seg = right.get(i);
-					    		lpw.printf("%f, %f, %d\n", seg.position, seg.velocity, (int)(seg.dt * 1000));
-					    	}
-					    			
-					    	// save right path to CSV
-					    	for (int i = 0; i < right.length(); i++) 
-					    	{			
-					    		Segment seg = left.get(i);
-					    		rpw.printf("%f, %f, %d\n", seg.position, seg.velocity, (int)(seg.dt * 1000));
-					    	}
+					        writeJavaFile(lpw, right, left.length(), fileName);
+					        writeJavaFile(rpw, left, right.length(), fileName);
+				    		
 				        }
 				        else
 				        {
@@ -964,18 +981,8 @@ public class Gui {
 					        
 					        // CSV with position and velocity. To be used with Talon SRX Motion
 					    	// save left path to CSV
-					    	for (int i = 0; i < left.length(); i++) 
-					    	{			
-					    		Segment seg = left.get(i);
-					    		lpw.printf("%f, %f, %d\n", seg.position, seg.velocity, (int)(seg.dt * 1000));
-					    	}
-					    			
-					    	// save right path to CSV
-					    	for (int i = 0; i < right.length(); i++) 
-					    	{			
-					    		Segment seg = right.get(i);
-					    		rpw.printf("%f, %f, %d\n", seg.position, seg.velocity, (int)(seg.dt * 1000));
-					    	}
+					        writeJavaFile(lpw, left, left.length(), fileName);
+					        writeJavaFile(rpw, right, right.length(), fileName);
 				        }
 				    			
 				    	lpw.close();
@@ -1171,245 +1178,11 @@ public class Gui {
     }
     
     private void btnSaveActionPerformed(java.awt.event.ActionEvent evt) throws IOException
-    {
-    	if(txtFileName.getText().equals("") == false)
-    	{
-    		if(directory != null)
-    		{
-    			if(left != null || fl != null)
-    			{
-    				if(rdbtnTankDrive.isSelected())
-    				{
-	    				lFile = new File(directory, fileName + "_left.csv");
-				        rFile = new File(directory, fileName + "_right.csv");
-				        
-				        if( lFile.exists() || rFile.exists() )
-				        {
-				        	int n = JOptionPane.showConfirmDialog(null, "File already exist. Would you like to replace it?", "File Exists", JOptionPane.YES_NO_OPTION);
-				        	
-				        	switch( n )
-				        	{
-				        	case JOptionPane.YES_OPTION:
-				        		break;		// Continue with method
-				        		
-				        	case JOptionPane.NO_OPTION:
-				        		return;		// Stop Saving
-				        		
-				        	default:
-				        		return;
-				        	}
-				        }
-				        	
-				    	FileWriter lfw = new FileWriter( lFile );
-						FileWriter rfw = new FileWriter( rFile );
-						PrintWriter lpw = new PrintWriter( lfw );
-						PrintWriter rpw = new PrintWriter( rfw );
-						
-				    	// Detailed CSV with dt, x, y, position, velocity, acceleration, jerk, and heading
-				        File leftFile = new File(directory, fileName + "_left_detailed.csv");
-				        File rightFile = new File(directory, fileName + "_right_detailed.csv");
-				        
-				        if (chckbxReverse.isSelected())
-				        {
-				        	Pathfinder.writeToCSV(rightFile, left);
-					        Pathfinder.writeToCSV(leftFile, right);
-					        
-					        // CSV with position and velocity. To be used with Talon SRX Motion 
-					    	// save left path to CSV
-					    	for (int i = 0; i < left.length(); i++) 
-					    	{			
-					    		Segment seg = right.get(i);
-					    		lpw.printf("%f, %f, %d\n", seg.position, seg.velocity, (int)(seg.dt * 1000));
-					    	}
-					    			
-					    	// save right path to CSV
-					    	for (int i = 0; i < right.length(); i++) 
-					    	{			
-					    		Segment seg = left.get(i);
-					    		rpw.printf("%f, %f, %d\n", seg.position, seg.velocity, (int)(seg.dt * 1000));
-					    	}
-				        }
-				        else
-				        {
-				        	Pathfinder.writeToCSV(rightFile, right);
-					        Pathfinder.writeToCSV(leftFile, left);
-					        
-					        // CSV with position and velocity. To be used with Talon SRX Motion
-					    	// save left path to CSV
-					    	for (int i = 0; i < left.length(); i++) 
-					    	{			
-					    		Segment seg = left.get(i);
-					    		lpw.printf("%f, %f, %d\n", seg.position, seg.velocity, (int)(seg.dt * 1000));
-					    	}
-					    			
-					    	// save right path to CSV
-					    	for (int i = 0; i < right.length(); i++) 
-					    	{			
-					    		Segment seg = right.get(i);
-					    		rpw.printf("%f, %f, %d\n", seg.position, seg.velocity, (int)(seg.dt * 1000));
-					    	}
-				        }
-				        
-				    	lpw.close();
-				    	rpw.close();
-    				}
-    				else
-    				{
-    					flFile = new File(directory, fileName + "_FrontLeft.csv");
-				        frFile = new File(directory, fileName + "_FrontRight.csv");
-				        blFile = new File(directory, fileName + "_BackLeft.csv");
-				        brFile = new File(directory, fileName + "_BackRight.csv");
-				        
-				        if( flFile.exists() || frFile.exists() || blFile.exists() || brFile.exists() )
-				        {
-				        	int n = JOptionPane.showConfirmDialog(null, "File already exist. Would you like to replace it?", "File Exists", JOptionPane.YES_NO_OPTION);
-				        	
-				        	switch( n )
-				        	{
-				        	case JOptionPane.YES_OPTION:
-				        		break;		// Continue with method
-				        		
-				        	case JOptionPane.NO_OPTION:
-				        		return;		// Stop Saving
-				        		
-				        	default:
-				        		return;
-				        	}
-				        }
-				        	
-				    	FileWriter flfw = new FileWriter( flFile );
-						FileWriter frfw = new FileWriter( frFile );
-						FileWriter blfw = new FileWriter( blFile );
-						FileWriter brfw = new FileWriter( brFile );
-						PrintWriter flpw = new PrintWriter( flfw );
-						PrintWriter frpw = new PrintWriter( frfw );
-						PrintWriter blpw = new PrintWriter( blfw );
-						PrintWriter brpw = new PrintWriter( brfw );
-						
-				    	// Detailed CSV with dt, x, y, position, velocity, acceleration, jerk, and heading
-				        File frontLeftFile = new File(directory, fileName + "_FrontLeft_detailed.csv");
-				        File frontRightFile = new File(directory, fileName + "_FrontRight_detailed.csv");
-				        File backLeftFile = new File(directory, fileName + "_BackLeft_detailed.csv");
-				        File backRightFile = new File(directory, fileName + "_BackRight_detailed.csv");
-				        
-				        if (chckbxReverse.isSelected())
-				        {
-				    		Pathfinder.writeToCSV(frontLeftFile, br);
-				    		Pathfinder.writeToCSV(frontRightFile, bl);
-				    		Pathfinder.writeToCSV(backLeftFile, fr);
-				    		Pathfinder.writeToCSV(backRightFile, fl);
-					        
-					        // CSV with position and velocity. To be used with Talon SRX Motion 
-				    		// save front left path to CSV
-					    	for (int i = 0; i < fl.length(); i++) 
-					    	{			
-					    		Segment seg = br.get(i);
-					    		flpw.printf("%f, %f, %d\n", seg.position, seg.velocity, (int)(seg.dt * 1000));
-					    	}
-					    			
-					    	// save front right path to CSV
-					    	for (int i = 0; i < fr.length(); i++) 
-					    	{			
-					    		Segment seg = bl.get(i);
-					    		frpw.printf("%f, %f, %d\n", seg.position, seg.velocity, (int)(seg.dt * 1000));
-					    	}
-					    	
-					    	// save back left path to CSV
-					    	for (int i = 0; i < bl.length(); i++) 
-					    	{			
-					    		Segment seg = fr.get(i);
-					    		blpw.printf("%f, %f, %d\n", seg.position, seg.velocity, (int)(seg.dt * 1000));
-					    	}
-					    			
-					    	// save back right path to CSV
-					    	for (int i = 0; i < br.length(); i++) 
-					    	{			
-					    		Segment seg = fl.get(i);
-					    		brpw.printf("%f, %f, %d\n", seg.position, seg.velocity, (int)(seg.dt * 1000));
-					    	}
-				        }
-				        else
-				        {
-				        	Pathfinder.writeToCSV(frontLeftFile, fl);
-				    		Pathfinder.writeToCSV(frontRightFile, fr);
-				    		Pathfinder.writeToCSV(backLeftFile, bl);
-				    		Pathfinder.writeToCSV(backRightFile, br);
-					        
-					        // CSV with position and velocity. To be used with Talon SRX Motion
-				    		// save front left path to CSV
-					    	for (int i = 0; i < fl.length(); i++) 
-					    	{			
-					    		Segment seg = fl.get(i);
-					    		flpw.printf("%f, %f, %d\n", seg.position, seg.velocity, (int)(seg.dt * 1000));
-					    	}
-					    			
-					    	// save front right path to CSV
-					    	for (int i = 0; i < fr.length(); i++) 
-					    	{			
-					    		Segment seg = fr.get(i);
-					    		frpw.printf("%f, %f, %d\n", seg.position, seg.velocity, (int)(seg.dt * 1000));
-					    	}
-					    	
-					    	// save back left path to CSV
-					    	for (int i = 0; i < bl.length(); i++) 
-					    	{			
-					    		Segment seg = bl.get(i);
-					    		blpw.printf("%f, %f, %d\n", seg.position, seg.velocity, (int)(seg.dt * 1000));
-					    	}
-					    			
-					    	// save back right path to CSV
-					    	for (int i = 0; i < br.length(); i++) 
-					    	{			
-					    		Segment seg = br.get(i);
-					    		brpw.printf("%f, %f, %d\n", seg.position, seg.velocity, (int)(seg.dt * 1000));
-					    	}
-				        }
-				    			
-				    	flpw.close();
-				    	frpw.close();
-				    	blpw.close();
-				    	brpw.close();
-    				}
-			    	
-			    	preferenceFile = new File(directory, fileName + "_Preferences.bot");
-			    	FileWriter pfw = new FileWriter(preferenceFile);
-			    	PrintWriter ppw = new PrintWriter(pfw);
-			    	
-			    	ppw.println(timeStep);
-			    	ppw.println(velocity);
-			    	ppw.println(acceleration);
-			    	ppw.println(jerk);
-			    	ppw.println(wheelBaseW);
-			    	ppw.println(wheelBaseD);
-			    	ppw.println(cbFitMethod.getSelectedItem());
-			    	
-			    	for(int i = 0; i < points.size(); i++)
-			    	{
-			    		ppw.printf("%4.2f, %4.2f, %4.2f", points.get(i).x, points.get(i).y, Pathfinder.r2d(points.get(i).angle));
-			    		ppw.println();
-			    	}
-			    	
-			    	ppw.close();
-    			}
-    			else
-    			{
-    				JOptionPane.showMessageDialog(null, "No Trajectory has been generated!", "Trajectory Not Generated", JOptionPane.INFORMATION_MESSAGE);
-        			return;
-    			}
-    		}
-    		else
-    		{
-    			JOptionPane.showMessageDialog(null, "No file destination chosen! \nClick the Browse button to choose a directory!", "File Destination Empty", JOptionPane.INFORMATION_MESSAGE);
-    			return;
-    		}
-    	
-    	}
-    	else
-    	{
-    		JOptionPane.showMessageDialog(null, "The File Name/directory field is empty! \nPlease enter a file name and click Browse for a destination!", "File Name Empty", JOptionPane.INFORMATION_MESSAGE);
-        	return;
-    	}	
+    { 
+    	System.out.println("Handled event: " + evt);
+    	doSave(); 
     }
+		
     
     private void btnClearActionPerformed(java.awt.event.ActionEvent evt)
     {
