@@ -898,9 +898,9 @@ public class Gui {
     	btnAddPoint.setText("Add Point");
     }
     
-    private void writeJavaFile(PrintWriter pw, Trajectory trajectory, int trajectory_length, String filename) {
+    private void writeJavaFile(PrintWriter pw, Trajectory trajectory, int trajectory_length) {
     	int teamNumber = 5437; //TODO parameterize
-		pw.printf("package org.usfirst.frc.%d.robot;\n\n", teamNumber);
+		pw.printf("package org.usfirst.frc.%d.robot.paths;\n\n", teamNumber);
 		pw.printf("public class %sMotionProfile {\n", fileName);
 		pw.printf("\tpublic static final int kNumPoints = %d;\n", trajectory_length);
 		pw.println("\tpublic static double [][]Points = new double[][]{\n");
@@ -933,8 +933,8 @@ public class Gui {
     			{
     				if(rdbtnTankDrive.isSelected())
     				{
-	    				lFile = new File(directory, fileName + "_left.java");
-				        rFile = new File(directory, fileName + "_right.java");
+	    				lFile = new File(directory, fileName + "Left.java");
+				        rFile = new File(directory, fileName + "Right.java");
 				        
 				        if( lFile.exists() || rFile.exists() )
 				        {
@@ -970,8 +970,8 @@ public class Gui {
 					        
 					        // CSV with position and velocity. To be used with Talon SRX Motion 
 					    	// save left path to CSV
-					        writeJavaFile(lpw, right, left.length(), fileName);
-					        writeJavaFile(rpw, left, right.length(), fileName);
+					        writeJavaFile(lpw, right, left.length());
+					        writeJavaFile(rpw, left, right.length());
 				    		
 				        }
 				        else
@@ -981,8 +981,8 @@ public class Gui {
 					        
 					        // CSV with position and velocity. To be used with Talon SRX Motion
 					    	// save left path to CSV
-					        writeJavaFile(lpw, left, left.length(), fileName);
-					        writeJavaFile(rpw, right, right.length(), fileName);
+					        writeJavaFile(lpw, left, left.length());
+					        writeJavaFile(rpw, right, right.length());
 				        }
 				    			
 				    	lpw.close();
